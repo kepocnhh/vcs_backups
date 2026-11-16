@@ -78,11 +78,16 @@ mapfile -d '' -t VCS_BACKUPS_GH_OWNERS < <(yq -Mer -0 -p=yml -o=yml '.github.own
 if [[ ${#VCS_BACKUPS_GH_OWNERS[@]} -eq 0 ]]; then
  echo 'No owners!' >&2; exit 1; fi
 
-ITEM_NUMBER=0
-while IFS= read -r -d '' VCS_BACKUPS_GH_OWNER; do
- ITEM_NUMBER=$((ITEM_NUMBER+1))
- echo "owner[${ITEM_NUMBER}/${VCS_BACKUPS_GH_OWNERS_COUNT}]: ${VCS_BACKUPS_GH_OWNER}"
-done < <(printf '%s\0' "${VCS_BACKUPS_GH_OWNERS[@]}")
+VALUE_NUMBER=0
+while IFS= read -r -d '' VALUE; do
+ VALUE_NUMBER=$((VALUE_NUMBER+1))
+ if [[ -z "${VALUE}" ]]; then
+  echo 'No owner!' >&2; exit 1
+ elif [[ ! "${VALUE}" =~ ^(_|[a-z]|[A-Z]|[0-9])+$ ]]; then
+  echo 'Wrong owner!' >&2; exit 1
+ fi
+ echo "owner[${VALUE_NUMBER}/${VCS_BACKUPS_GH_OWNERS_COUNT}]: ${VALUE}"
+done < <(printf '%s\0' "${VCS_BACKUPS_GH_OWNERS[@]}" | LC_ALL=C sort -z)
 
 #
 
