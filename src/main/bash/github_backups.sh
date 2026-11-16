@@ -72,4 +72,9 @@ if [[ ! -d "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" ]]; then
   echo "Git clone ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
 fi
 
+echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP}..."
+git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" fetch --quiet -p --tags
+if [[ $? != 0 ]]; then
+ echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
+
 #
