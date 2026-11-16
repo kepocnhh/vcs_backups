@@ -102,7 +102,7 @@ mapfile -d '' -t GITHUB_OWNERS < <(yq -Mer -0 -p=yml -o=yml '.github.owners[]' "
 if [[ ${#GITHUB_OWNERS[@]} -eq 0 ]]; then
  echo 'No owners!' >&2; exit 1; fi
 
-VALUE_NUMBER=0
+GITHUB_OWNER_NUMBER=0
 while IFS= read -r -d '' GITHUB_OWNER; do
  if [[ -z "${GITHUB_OWNER}" ]]; then
   echo 'No owner!' >&2; exit 1
@@ -122,8 +122,30 @@ while IFS= read -r -d '' GITHUB_OWNER; do
    echo "Make \"${GITHUB_OWNER_DIR}\" dir error!"; exit 1; fi
  fi
  #
- VALUE_NUMBER=$((VALUE_NUMBER+1))
- echo "owner[${VALUE_NUMBER}/${GITHUB_OWNERS_COUNT}]: ${GITHUB_OWNER}"
+ rm "${GITHUB_DST}"
+ HTTP_CODE=$(curl -m 8 -w '%{http_code}' \
+  --url "${GITHUB_API}/users/${GITHUB_OWNER}/repos?per_page=${GITHUB_PER_PAGE}&sort=pushed" \
+  --header 'Accept: application/vnd.github+json' \
+  --header "X-GitHub-Api-Version: ${GITHUB_API_VERSION}" \
+  -o "${GITHUB_DST}" 2>/dev/null)
+ if [[ $? -ne 0 || "${HTTP_CODE}" != '200' ]]; then
+  echo "Request \"${GITHUB_OWNER}\" error!" >&2; continue; fi
+ #
+ GITHUB_REPS_COUNT="$(yq -Mer -p=json -o=yml 'length' "${GITHUB_DST}")"
+ if [[ $? != 0 ]]; then
+  echo 'Get reps count error!' >&2; exit 1
+ elif [[ ! "${GITHUB_REPS_COUNT}" =~ ^[1-9][0-9]?$ ]]; then
+  echo 'Wrong reps count!' >&2; exit 1
+ fi
+ mapfile -d '' -t GITHUB_REPS < <(yq -Mer -0 -p=yml -o=yml '.[].name' "${GITHUB_DST}")
+ if [[ ${#GITHUB_REPS[@]} -eq 0 ]]; then
+  echo 'No reps!' >&2; exit 1; fi
+ GITHUB_OWNER_NUMBER=$((GITHUB_OWNER_NUMBER+1))
+ GITHUB_REP_NUMBER=0
+ while IFS= read -r -d '' GITHUB_REP; do
+  GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
+  printf "%03d / %03d ${GITHUB_OWNER} %03d / %03d"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+ done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 
 #
