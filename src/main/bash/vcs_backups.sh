@@ -106,7 +106,7 @@ GITHUB_OWNER_NUMBER=0
 while IFS= read -r -d '' GITHUB_OWNER; do
  if [[ -z "${GITHUB_OWNER}" ]]; then
   echo 'No owner!' >&2; exit 1
- elif [[ ! "${GITHUB_OWNER}" =~ ^(_|[a-z]|[A-Z]|[0-9])+$ ]]; then
+ elif [[ ! "${GITHUB_OWNER}" =~ ^(_|[a-z]|[A-Z]|[0-9])(_|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
   echo 'Wrong owner!' >&2; exit 1
  fi
  #
@@ -145,6 +145,7 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
   printf "%03d / %03d ${GITHUB_OWNER} %03d / %03d"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+  ${VCS_BACKUPS_WORKDIR}/github_backups.sh --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 
