@@ -106,7 +106,7 @@ GITHUB_OWNER_NUMBER=0
 while IFS= read -r -d '' GITHUB_OWNER; do
  if [[ -z "${GITHUB_OWNER}" ]]; then
   echo 'No owner!' >&2; exit 1
- elif [[ ! "${GITHUB_OWNER}" =~ ^(_|[a-z]|[A-Z]|[0-9])(_|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
+ elif [[ ! "${GITHUB_OWNER}" =~ ^(_|-|[a-z]|[A-Z]|[0-9])(_|-|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
   echo 'Wrong owner!' >&2; exit 1
  fi
  #
@@ -131,13 +131,13 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  if [[ $? -ne 0 || "${HTTP_CODE}" != '200' ]]; then
   echo "Request \"${GITHUB_OWNER}\" error!" >&2; continue; fi
  #
- GITHUB_REPS_COUNT="$(yq -Mer -p=json -o=yml 'length' "${GITHUB_DST}")"
+ GITHUB_REPS_COUNT="$(yq -Mer -p=json -o=json 'length' "${GITHUB_DST}")"
  if [[ $? != 0 ]]; then
   echo 'Get reps count error!' >&2; exit 1
  elif [[ ! "${GITHUB_REPS_COUNT}" =~ ^[1-9][0-9]?$ ]]; then
   echo 'Wrong reps count!' >&2; exit 1
  fi
- mapfile -d '' -t GITHUB_REPS < <(yq -Mer -0 -p=yml -o=yml '.[].name' "${GITHUB_DST}")
+ mapfile -d '' -t GITHUB_REPS < <(yq -Mer -0 -p=json -o=json '.[].name' "${GITHUB_DST}")
  if [[ ${#GITHUB_REPS[@]} -eq 0 ]]; then
   echo 'No reps!' >&2; exit 1; fi
  GITHUB_OWNER_NUMBER=$((GITHUB_OWNER_NUMBER+1))
@@ -145,7 +145,60 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
   printf "%03d / %03d ${GITHUB_OWNER} %03d / %03d"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
-  ${VCS_BACKUPS_WORKDIR}/github_backups.sh --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
+  "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
+ done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
+done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
+
+#
+
+GITHUB_OWNERS_COUNT="$(yq -Mer -p=yml -o=yml '.github.reps | length' "${VCS_BACKUPS_CONFIG}")"
+if [[ $? != 0 ]]; then
+ echo 'Get owners count error!' >&2; exit 1
+elif [[ ! "${GITHUB_OWNERS_COUNT}" =~ ^[1-9][0-9]?$ ]]; then
+ echo 'Wrong owners count!' >&2; exit 1
+fi
+
+mapfile -d '' -t GITHUB_OWNERS < <(yq -Mer -0 -p=yml -o=yml '.github.reps | keys | .[]' "${VCS_BACKUPS_CONFIG}")
+if [[ ${#GITHUB_OWNERS[@]} -eq 0 ]]; then
+ echo 'No owners!' >&2; exit 1; fi
+
+GITHUB_OWNER_NUMBER=0
+while IFS= read -r -d '' GITHUB_OWNER; do
+ if [[ -z "${GITHUB_OWNER}" ]]; then
+  echo 'No owner!' >&2; exit 1
+ elif [[ ! "${GITHUB_OWNER}" =~ ^(_|-|[a-z]|[A-Z]|[0-9])(_|-|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
+  echo 'Wrong owner!' >&2; exit 1
+ fi
+ #
+ GITHUB_OWNER_DIR="${VCS_BACKUPS_REPSDIR}/${GITHUB_OWNER}"
+ if [[ -L "${GITHUB_OWNER_DIR}" ]]; then
+  echo "\"${GITHUB_OWNER_DIR}\" is a symlink!" >&2; exit 1
+ elif [[ -e "${GITHUB_OWNER_DIR}" ]]; then
+  if [[ ! -d "${GITHUB_OWNER_DIR}" ]]; then
+   echo "\"${GITHUB_OWNER_DIR}\" is not a dir!" >&2; exit 1; fi
+ else
+  mkdir "${GITHUB_OWNER_DIR}"
+  if [[ $? != 0 || ! -d "${GITHUB_OWNER_DIR}" ]]; then
+   echo "Make \"${GITHUB_OWNER_DIR}\" dir error!"; exit 1; fi
+ fi
+ #
+ GITHUB_REPS_COUNT="$(STR_VALUE="${GITHUB_OWNER}" \
+  yq -Mer -p=yml -o=yml '.github.reps[strenv(STR_VALUE)] | length' "${VCS_BACKUPS_CONFIG}")"
+ if [[ $? != 0 ]]; then
+  echo 'Get reps count error!' >&2; exit 1
+ elif [[ ! "${GITHUB_REPS_COUNT}" =~ ^[1-9][0-9]?$ ]]; then
+  echo 'Wrong reps count!' >&2; exit 1
+ fi
+ mapfile -d '' -t GITHUB_REPS < <(STR_VALUE="${GITHUB_OWNER}" \
+  yq -Mer -0 -p=yml -o=yml '.github.reps[strenv(STR_VALUE)][]' "${VCS_BACKUPS_CONFIG}")
+ if [[ ${#GITHUB_REPS[@]} -eq 0 ]]; then
+  echo 'No reps!' >&2; exit 1; fi
+ GITHUB_OWNER_NUMBER=$((GITHUB_OWNER_NUMBER+1))
+ GITHUB_REP_NUMBER=0
+ while IFS= read -r -d '' GITHUB_REP; do
+  GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
+  printf "%03d / %03d ${GITHUB_OWNER} %03d / %03d"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+  "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 

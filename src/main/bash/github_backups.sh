@@ -24,7 +24,7 @@ done
 
 if [[ -z "${GITHUB_OWNER}" ]]; then
  echo 'No owner!' >&2; exit 1
-elif [[ ! "${GITHUB_OWNER}" =~ ^(_|[a-z]|[A-Z]|[0-9])(_|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
+elif [[ ! "${GITHUB_OWNER}" =~ ^(_|-|[a-z]|[A-Z]|[0-9])(_|-|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
  echo 'Wrong owner!' >&2; exit 1
 fi
 
@@ -32,7 +32,7 @@ fi
 
 if [[ -z "${GITHUB_REP}" ]]; then
  echo 'No rep!' >&2; exit 1
-elif [[ ! "${GITHUB_REP}" =~ ^(_|[a-z]|[A-Z]|[0-9])(_|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
+elif [[ ! "${GITHUB_REP}" =~ ^(_|-|[a-z]|[A-Z]|[0-9])(_|-|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
  echo 'Wrong rep!' >&2; exit 1
 fi
 
