@@ -60,6 +60,30 @@ elif [[ ! -s "${VCS_BACKUPS_CONFIG}" ]]; then
  echo "\"${VCS_BACKUPS_CONFIG}\" is empty!" >&2; exit 1
 fi
 
+# github
+
+VCS_BACKUPS_GH_API='https://api.github.com'
+VCS_BACKUPS_GH_API_VERSION='2026-03-10'
+VCS_BACKUPS_GH_PER_PAGE=64
+VCS_BACKUPS_GH_DST="$(mktemp)"
+
+VCS_BACKUPS_GH_OWNERS_COUNT="$(yq -Mer -p=yml -o=yml '.github.owners | length' "${VCS_BACKUPS_CONFIG}")"
+if [[ $? != 0 ]]; then
+ echo 'Get owners count error!' >&2; exit 1
+elif [[ ! "${VCS_BACKUPS_GH_OWNERS_COUNT}" =~ ^[1-9][0-9]?$ ]]; then
+ echo 'Wrong owners count!' >&2; exit 1
+fi
+
+mapfile -d '' -t VCS_BACKUPS_GH_OWNERS < <(yq -Mer -0 -p=yml -o=yml '.github.owners[]' "${VCS_BACKUPS_CONFIG}")
+if [[ ${#VCS_BACKUPS_GH_OWNERS[@]} -eq 0 ]]; then
+ echo 'No owners!' >&2; exit 1; fi
+
+ITEM_NUMBER=0
+while IFS= read -r -d '' VCS_BACKUPS_GH_OWNER; do
+ ITEM_NUMBER=$((ITEM_NUMBER+1))
+ echo "owner[${ITEM_NUMBER}/${VCS_BACKUPS_GH_OWNERS_COUNT}]: ${VCS_BACKUPS_GH_OWNER}"
+done < <(printf '%s\0' "${VCS_BACKUPS_GH_OWNERS[@]}")
+
 #
 
 echo 'Not implemented!' >&2; exit 1 # todo
