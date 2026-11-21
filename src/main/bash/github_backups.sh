@@ -65,21 +65,27 @@ else
  echo "\"${GITHUB_OWNER_DIR}\" does not exist!" >&2; exit 1
 fi
 
-if [[ -d "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" ]]; then
- echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP}..."
- git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" fetch --quiet -p --tags --force origin
+if [[ ! -d "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" ]]; then
+ echo "Git init ${GITHUB_OWNER}/${GITHUB_REP}..."
+ git init --quiet --bare "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git"
  if [[ $? != 0 ]]; then
-  echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
-else
- echo "Git clone ${GITHUB_OWNER}/${GITHUB_REP}..."
- git clone --quiet --bare "https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git" "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git"
+  echo "Git init ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
+ #
+ echo "Git remote add https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git..."
+ git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" remote add origin "https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git"
  if [[ $? != 0 ]]; then
-  echo "Git clone ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
- git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' \
-  && git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.auto 0 \
+  echo "Git remote add https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git error!" >&2; exit 1; fi
+ #
+ echo "Git config ${GITHUB_OWNER}/${GITHUB_REP}..."
+ git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.auto 0 \
   && git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.pruneExpire never
  if [[ $? != 0 ]]; then
   echo "Git config ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
 fi
+
+echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP}..."
+git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" fetch --quiet --prune --tags --force origin
+if [[ $? != 0 ]]; then
+ echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
 
 #
