@@ -132,9 +132,12 @@ while IFS= read -r -d '' GITHUB_OWNER; do
   --url "${GITHUB_API}/users/${GITHUB_OWNER}/repos?per_page=${GITHUB_PER_PAGE}&sort=pushed" \
   --header 'Accept: application/vnd.github+json' \
   --header "X-GitHub-Api-Version: ${GITHUB_API_VERSION}" \
-  -o "${GITHUB_DST}" 2>/dev/null)
+  -o "${GITHUB_DST}" 2> "${STDERR}")
  if [[ $? -ne 0 || "${HTTP_CODE}" != '200' ]]; then
-  echo "Request \"${GITHUB_OWNER}\" error!" >&2; continue; fi
+  printf '%s\n' "Request \"${GITHUB_OWNER}\" error!" | tee -a "${VCS_BACKUPS_LOGS}" >&2
+  cat -- "${STDERR}" >> "${VCS_BACKUPS_LOGS}"
+  continue
+ fi
  #
  GITHUB_REPS_COUNT="$(yq -Mer -p=json -o=json 'length' "${GITHUB_DST}")"
  if [[ $? != 0 ]]; then
@@ -150,10 +153,9 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
   printf "%02d/%02d %s %02d/%02d %s"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_OWNER}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}" "${GITHUB_REP}"
-  :> "${STDERR}"
   "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}" 2> "${STDERR}"
   if [[ $? != 0 ]]; then
-   printf '%s' "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" | tee -a "${VCS_BACKUPS_LOGS}" >&2
+   printf '%s\n' "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" | tee -a "${VCS_BACKUPS_LOGS}" >&2
    cat -- "${STDERR}" >> "${VCS_BACKUPS_LOGS}"
   fi
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
@@ -210,10 +212,9 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
   printf "%02d/%02d %s %02d/%02d %s"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_OWNER}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}" "${GITHUB_REP}"
-  :> "${STDERR}"
   "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}" 2> "${STDERR}"
   if [[ $? != 0 ]]; then
-   printf '%s' "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" | tee -a "${VCS_BACKUPS_LOGS}" >&2
+   printf '%s\n' "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" | tee -a "${VCS_BACKUPS_LOGS}" >&2
    cat -- "${STDERR}" >> "${VCS_BACKUPS_LOGS}"
   fi
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
