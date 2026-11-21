@@ -70,6 +70,11 @@ if [[ ! -d "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" ]]; then
  git clone --quiet --bare "https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git" "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git"
  if [[ $? != 0 ]]; then
   echo "Git clone ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
+ git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' \
+  && git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.auto 0 \
+  && git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.pruneExpire never
+ if [[ $? != 0 ]]; then
+  echo "Git config ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
 fi
 
 echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP}..."
