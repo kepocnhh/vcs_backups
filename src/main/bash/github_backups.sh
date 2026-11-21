@@ -66,21 +66,26 @@ else
 fi
 
 if [[ ! -d "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" ]]; then
+ VCS_BACKUPS_DST="$(mktemp -d)" || exit 1
+ VCS_BACKUPS_ORIGIN="https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git"
+ #
  echo "Git init ${GITHUB_OWNER}/${GITHUB_REP}..."
- git init --quiet --bare "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git"
+ git init --quiet --bare "${VCS_BACKUPS_DST}"
  if [[ $? != 0 ]]; then
   echo "Git init ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
  #
- echo "Git remote add https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git..."
- git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" remote add origin "https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git"
+ git -C "${VCS_BACKUPS_DST}" remote add origin "${VCS_BACKUPS_ORIGIN}"
  if [[ $? != 0 ]]; then
-  echo "Git remote add https://github.com/${GITHUB_OWNER}/${GITHUB_REP}.git error!" >&2; exit 1; fi
+  echo "Git remote add \"${VCS_BACKUPS_ORIGIN}\" error!" >&2; exit 1; fi
  #
- echo "Git config ${GITHUB_OWNER}/${GITHUB_REP}..."
- git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.auto 0 \
-  && git -C "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git" config --local gc.pruneExpire never
+ git -C "${VCS_BACKUPS_DST}" config --local gc.auto 0 \
+  && git -C "${VCS_BACKUPS_DST}" config --local gc.pruneExpire never
  if [[ $? != 0 ]]; then
   echo "Git config ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
+ #
+ mv "${VCS_BACKUPS_DST}" "${GITHUB_OWNER_DIR}/${GITHUB_REP}.git"
+ if [[ $? != 0 ]]; then
+  echo "Move ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; exit 1; fi
 fi
 
 echo "Git fetch ${GITHUB_OWNER}/${GITHUB_REP}..."
