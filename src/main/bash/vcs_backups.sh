@@ -84,7 +84,7 @@ else
  VCS_BACKUPS_REPSDIR="${VCS_BACKUPS_WORKDIR}"
 fi
 
-# github
+printf $'\n''GitHub owners...'$'\n'
 
 GITHUB_API='https://api.github.com'
 GITHUB_API_VERSION='2026-03-10'
@@ -144,12 +144,14 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  GITHUB_REP_NUMBER=0
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
-  printf "%03d / %03d ${GITHUB_OWNER} %03d / %03d"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+  printf "%02d/%02d ${GITHUB_OWNER} %02d/%02d ${GITHUB_REP}"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
   "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 
 #
+
+printf $'\n''GitHub repositories...'$'\n'
 
 GITHUB_OWNERS_COUNT="$(yq -Mer -p=yml -o=yml '.github.reps | length' "${VCS_BACKUPS_CONFIG}")"
 if [[ $? != 0 ]]; then
@@ -197,11 +199,9 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  GITHUB_REP_NUMBER=0
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
-  printf "%03d / %03d ${GITHUB_OWNER} %03d / %03d"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+  printf "%02d/%02d ${GITHUB_OWNER} %02d/%02d ${GITHUB_REP}"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
   "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 
 #
-
-echo 'Not implemented!' >&2; exit 1 # todo
