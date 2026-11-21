@@ -144,8 +144,9 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  GITHUB_REP_NUMBER=0
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
-  printf "%02d/%02d ${GITHUB_OWNER} %02d/%02d ${GITHUB_REP}"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+  printf "%02d/%02d %s %02d/%02d %s"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_OWNER}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}" "${GITHUB_REP}"
   "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
+  if [[ $? != 0 ]]; then echo "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; fi
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 
@@ -199,10 +200,9 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  GITHUB_REP_NUMBER=0
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
-  printf "%02d/%02d ${GITHUB_OWNER} %02d/%02d ${GITHUB_REP}"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}"
+  printf "%02d/%02d %s %02d/%02d %s"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_OWNER}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}" "${GITHUB_REP}"
   "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
-  if [[ $? != 0 ]]; then
-   echo "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; fi
+  if [[ $? != 0 ]]; then echo "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; fi
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
 
