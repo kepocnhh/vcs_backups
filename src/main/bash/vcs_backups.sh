@@ -84,6 +84,11 @@ else
  VCS_BACKUPS_REPSDIR="${VCS_BACKUPS_WORKDIR}"
 fi
 
+
+VCS_BACKUPS_LOGS="$(mktemp)"
+
+#
+
 printf $'\n''GitHub owners...'$'\n'
 
 GITHUB_API='https://api.github.com'
@@ -145,7 +150,7 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
   printf "%02d/%02d %s %02d/%02d %s"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_OWNER}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}" "${GITHUB_REP}"
-  "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
+  "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}" 2>> "${VCS_BACKUPS_LOGS}"
   if [[ $? != 0 ]]; then echo "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; fi
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
@@ -201,9 +206,16 @@ while IFS= read -r -d '' GITHUB_OWNER; do
  while IFS= read -r -d '' GITHUB_REP; do
   GITHUB_REP_NUMBER=$((GITHUB_REP_NUMBER+1))
   printf "%02d/%02d %s %02d/%02d %s"$'\n' "${GITHUB_OWNER_NUMBER}" "${GITHUB_OWNERS_COUNT}" "${GITHUB_OWNER}" "${GITHUB_REP_NUMBER}" "${GITHUB_REPS_COUNT}" "${GITHUB_REP}"
-  "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}"
-  if [[ $? != 0 ]]; then echo "Backup ${GITHUB_OWNER}/${GITHUB_REP} error!" >&2; fi
+  "${VCS_BACKUPS_WORKDIR}/github_backups.sh" --repsdir "${VCS_BACKUPS_REPSDIR}" --owner "${GITHUB_OWNER}" --rep "${GITHUB_REP}" 2>> "${VCS_BACKUPS_LOGS}"
  done < <(printf '%s\0' "${GITHUB_REPS[@]}" | LC_ALL=C sort -z)
 done < <(printf '%s\0' "${GITHUB_OWNERS[@]}" | LC_ALL=C sort -z)
+
+#
+
+if [[ -s "${VCS_BACKUPS_LOGS}" ]]; then
+ echo "Some operations failed with errors: ${VCS_BACKUPS_LOGS}"
+else
+ rm "${VCS_BACKUPS_LOGS}"
+fi
 
 #
