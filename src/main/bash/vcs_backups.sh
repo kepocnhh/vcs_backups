@@ -106,7 +106,7 @@ GITHUB_OWNER_NUMBER=0
 while IFS= read -r -d '' GITHUB_OWNER; do
  if [[ -z "${GITHUB_OWNER}" ]]; then
   echo 'No owner!' >&2; exit 1
- elif [[ ! "${GITHUB_OWNER}" =~ ^(_|-|[a-z]|[A-Z]|[0-9])(_|-|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
+ elif [[ "${GITHUB_OWNER}" == '.' || "${GITHUB_OWNER}" == '..' || ! "${GITHUB_OWNER}" =~ ^[a-zA-Z0-9\._-]+$ ]]; then
   echo 'Wrong owner!' >&2; exit 1
  fi
  #
@@ -166,7 +166,7 @@ GITHUB_OWNER_NUMBER=0
 while IFS= read -r -d '' GITHUB_OWNER; do
  if [[ -z "${GITHUB_OWNER}" ]]; then
   echo 'No owner!' >&2; exit 1
- elif [[ ! "${GITHUB_OWNER}" =~ ^(_|-|[a-z]|[A-Z]|[0-9])(_|-|\.|[a-z]|[A-Z]|[0-9])*$ ]]; then
+ elif [[ "${GITHUB_OWNER}" == '.' || "${GITHUB_OWNER}" == '..' || ! "${GITHUB_OWNER}" =~ ^[a-zA-Z0-9\._-]+$ ]]; then
   echo 'Wrong owner!' >&2; exit 1
  fi
  #
